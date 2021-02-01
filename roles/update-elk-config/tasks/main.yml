@@ -1,2 +1,96 @@
 ---
 # tasks file for update-elk-config
+- name: "Download {{ filetype }}.conf"
+  get_url:
+    url: "{{ url_file }}"
+    dest: "/tmp/{{ filetype }}.conf"
+    force: yes
+
+- name: Create a backup directory if it does not exist
+  ansible.builtin.file:
+    path: "{{ backup_path }}"
+    state: directory
+    mode: '0755'
+- name: Handle the error
+  block:
+   - name: Print a message
+     ansible.builtin.debug:
+       msg: 'I execute normally'
+
+   - name: "Copy a new {{ filetype }}.conf file into place, backing up the original if it differs from the copied version"
+     ansible.builtin.copy:
+       src: "/tmp/{{ filetype }}.conf"
+       dest: "{{ config_path }}/{{ filetype }}.conf"
+       mode: '0644'
+       backup: yes
+  #    validate: bin/logstash --config.test_and_exit -f %s
+     register: old_file
+
+   - name: Print the register variable
+     ansible.builtin.debug:
+       msg: "{{ old_file.backup_file }}"
+     when: old_file.backup_file is defined
+
+   - name: "Copy the backup file into the backup folder"
+     ansible.builtin.copy:
+       src: "{{ old_file.backup_file }}"
+       dest: "{{ backup_path }}"
+       mode: '0644'
+     register: backup_file
+     when: old_file.backup_file is defined
+
+   - name: Print the register variable
+     ansible.builtin.debug:
+       msg: "The Backup file is {{ backup_file.dest }}"
+     when: old_file.backup_file is defined
+
+   - name: Delete file after moving it to backup folder
+     ansible.builtin.file:
+       path: "{{ backup_file.dest }}"
+       state: absent
+     when: old_file.backup_file is defined
+
+   - name: Stop servcie in Master {{ filetype }}
+     ansible.builtin.systemd:
+       state: stopped
+       name: "{{ filetype }}"
+     when: old_file.backup_file is defined and elk_type=="master"
+
+   - name: Start servcie in Master {{ filetype }}
+     ansible.builtin.systemd:
+       state: started
+       name: "{{ filetype }}"
+     when: old_file.backup_file is defined and elk_type=="master"
+
+   - name: Stop servcie in Slave {{ filetype }}
+     ansible.builtin.systemd:
+       state: stopped
+       name: "{{ filetype }}"
+     when: old_file.backup_file is defined and elk_type=="slave"
+
+   - name: Start servcie in Master {{ filetype }}
+     ansible.builtin.systemd:
+       state: started
+       name: "{{ filetype }}"
+     when: old_file.backup_file is defined and elk_type=="slave"
+
+  rescue:
+       - name: Print when errors
+         ansible.builtin.debug:
+           msg: 'I caught an error, can do stuff here to fix it, :-)'
+
+       - name: "Roolback config files"
+         ansible.builtin.copy:
+            src: "{{ backup_file.dest }}"
+            dest: "{{ config_path }}/{{ filetype }}.conf"
+
+       - name: Stop servcie {{ filetype }}
+         ansible.builtin.systemd:
+           state: stopped
+           name: "{{ filetype }}"
+
+       - name: Start servcie in Slave {{ filetype }}
+         ansible.builtin.systemd:
+           state: started
+           name: "{{ filetype }}"
+

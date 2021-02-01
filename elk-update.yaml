@@ -1,0 +1,13 @@
+---
+- name: Update Config
+  hosts: all
+#  become: yes
+  roles:
+    - role: update-elk-config
+#    - role: another-role
+#      when: pc_type != 'bat'
+#      tags:
+#        - make
+#  environment:
+#     http_proxy: '{{ proxy_server }}'
+#     https_proxy: '{{ proxy_server }}'

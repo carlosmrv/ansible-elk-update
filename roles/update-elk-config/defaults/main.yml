@@ -1,2 +1,7 @@
 ---
 # defaults file for update-elk-config
+url_file: https://raw.githubusercontent.com/carlosmrv/jgsu-spring-petclinic/main/histrory-aplicattion_name
+filetype: logstash
+config_path: ~/{{ filetype }}
+backup_path: ~/{{ filetype }}/backup
+elk_type: master

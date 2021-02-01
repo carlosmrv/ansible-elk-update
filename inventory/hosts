@@ -1,3 +1,6 @@
+[locales]
+localhost ansible_connection=local
+
 [pre-1]
 Master-1 ansible_host=10.100.13.176  elk_type=master
 Slave-1 ansible_host=10.100.13.176  elk_type=slave
