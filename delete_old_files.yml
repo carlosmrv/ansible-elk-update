@@ -1,0 +1,4 @@
+- name: Delete Files
+  hosts: all
+  roles:
+    - role: delete_old_files

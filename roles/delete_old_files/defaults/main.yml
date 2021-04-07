@@ -1,2 +1,4 @@
 ---
 # defaults file for delete_old_files
+number_of_days: 15
+root_directory: /tmp
